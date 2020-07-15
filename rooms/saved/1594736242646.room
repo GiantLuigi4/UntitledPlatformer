@@ -1,0 +1,9 @@
+blocks.BlockBrick,-15,15,30,10,222222222
+blocks.BlockBrick,-5,25,10,20,22222222
+blocks.BlockBrick,-55,45,110,10,222222
+blocks.BlockBrick,45,-15,10,60,22222
+blocks.BlockBrick,-55,5,10,40,2222
+blocks.BlockBrick,-55,-15,10,10,255555
+blocks.BlockBrick,-55,-25,110,10,25555555
+blocks.WaterBlock,5,25,40,20,435434534
+blocks.WaterBlock,-45,25,40,20,43543453

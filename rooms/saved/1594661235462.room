@@ -1,0 +1,9 @@
+blocks.BlockBrick,-25,5,30,10,-1
+blocks.BlockBrick,-25,-15,10,20,-1
+blocks.BlockBrick,-45,-15,20,10,-1
+blocks.BlockBrick,-45,-5,10,20,-1
+blocks.BlockBrick,-65,5,20,10,-1
+blocks.BlockBrick,-65,-35,10,30,-1
+blocks.BlockBrick,-55,-35,60,10,-1
+blocks.BlockBrick,-5,-25,10,20,-1
+blocks.RoomSpawnerBlock,-65,-5,10,10,-1
