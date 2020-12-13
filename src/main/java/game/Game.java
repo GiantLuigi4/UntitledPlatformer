@@ -1,9 +1,6 @@
 package game;
 
-import blocks.Block;
-import blocks.BlockBrick;
-import blocks.BlockRegistry;
-import blocks.IBackgroundBlock;
+import blocks.*;
 import rooms.Room;
 import rooms.RoomTemplate;
 import utils.MathUtils;
@@ -19,6 +16,7 @@ import java.awt.event.KeyListener;
 import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -53,11 +51,13 @@ public class Game extends JComponent {
 	
 	@Override
 	public boolean isOptimizedDrawingEnabled() {
-		return true;
+		return false;
 	}
 	
 	public final ArrayList<Block> blocks=new ArrayList<>();
 	public final ArrayList<Block> blocksToAdd=new ArrayList<>();
+	
+	public static ArrayList<Room> queuedRooms = new ArrayList<>();
 	
 	public final ArrayList<Room> rooms=new ArrayList<>();
 	
@@ -82,10 +82,15 @@ public class Game extends JComponent {
 		try {
 			rooms.forEach(r->r.draw(g2d));
 			
-			game.blocks.forEach(b->{
-				if (b instanceof IBackgroundBlock)
-					((IBackgroundBlock)b).drawBackground(g2d);
-			});
+			try {
+				for (int i=0;i<game.blocks.size();i++) {
+					Block b=game.blocks.get(i);
+					if (b instanceof IBackgroundBlock)
+						((IBackgroundBlock)b).drawBackground(g2d);
+				}
+			} catch (Throwable err) {
+				err.printStackTrace();
+			}
 			
 			try {
 				AffineTransform source=g2d.getTransform();
@@ -109,21 +114,53 @@ public class Game extends JComponent {
 				g2d.fillRect(-5,-5,10,10);
 			}
 			
-			game.blocks.forEach(b->b.draw(g2d));
+			queuedRooms.clear();
+			for (int i=0;i<game.blocks.size();i++) {
+				Block b=game.blocks.get(i);
+				startRender=new Date();
+				try {
+					b.draw(g2d);
+				} catch (Throwable err) {
+					err.printStackTrace();
+				}
+				RoomSpawnerBlock.reset();
+			}
+//			if (false) {
+//				game.blocks.forEach(b->{
+//					try {
+//						b.draw(g2d);
+//					} catch (Throwable ignored) {}
+//					RoomSpawnerBlock.reset();
+//				});
+//			}
+			queuedRooms.clear();
 			g2d.setTransform(transform);
 			
 			if (false) {
 				g2d.translate(-playerX,-playerY);
 				game.blocks.forEach((b)->b.drawCollision(g2d));
 			}
-		} catch (Throwable ignored) {}
+		} catch (Throwable err) {
+			err.printStackTrace();
+		}
 		g2d.setTransform(transform2);
 	}
 	
 	public boolean checkRoomValid(Room r) {
-		for (Room room:this.rooms) {
-			if (r.collidesWithRoom(room)) {
-				return false;
+		for (int i=0;i<this.rooms.size();i++) {
+			if (i<this.rooms.size()) {
+				Room room = this.rooms.get(i);
+				if (r.collidesWithRoom(room)) {
+					return false;
+				}
+			}
+		}
+		for (int i=0;i<queuedRooms.size();i++) {
+			if (i<queuedRooms.size()) {
+				Room room=queuedRooms.get(i);
+				if (r.collidesWithRoom(room)) {
+					return false;
+				}
 			}
 		}
 		return true;
@@ -256,6 +293,8 @@ public class Game extends JComponent {
 		RoomTemplate start=loadOrGetRoom("start");
 		game.rooms.add(new Room(start,0,0));
 		
+		start.add(game.blocks,0,0);
+		
 		while (frame.isDisplayable()&&frame.isVisible()) {
 			game.updateGame();
 		}
@@ -264,8 +303,11 @@ public class Game extends JComponent {
 	
 	public static Date lastTick=new Date();
 	
+	public static Date startRender;
+	
 	public void updateGame() {
-		if (new Date().getTime()-lastTick.getTime() > 100) {
+		RoomSpawnerBlock.reset();
+		if (new Date().getTime()-lastTick.getTime() > 50) {
 			onGround=false;
 			
 			lastTick=new Date();
@@ -333,6 +375,7 @@ public class Game extends JComponent {
 		try {
 			Thread.sleep(1);
 		} catch (Throwable ignored) {}
+		queuedRooms.clear();
 		frame.repaint();
 	}
 	

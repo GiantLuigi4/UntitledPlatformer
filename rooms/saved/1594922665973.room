@@ -1,0 +1,8 @@
+blocks.RoomSpawnerBlock,-5,-15,10,10,16777215,rooms up,10,10
+blocks.BlockBrick,-15,-15,10,10,16777215
+blocks.BlockBrick,5,-15,10,10,16777215
+blocks.BlockBrick,5,5,10,10,16777215
+blocks.BlockBrick,-15,5,10,10,16777215
+blocks.WaterBlock,-5,-5,10,20,16777215
+blocks.RoomSpawnerBlock,-15,-5,10,10,16777215,rooms1,0,-10
+blocks.RoomSpawnerBlock,5,-5,10,10,16777215,rooms right,20,-10

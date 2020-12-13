@@ -1,0 +1,7 @@
+blocks.BlockBrick,-15,35,20,10,16777215
+blocks.BlockBrick,-35,15,10,50,16777215
+blocks.BlockBrick,5,-5,10,70,16777215
+blocks.BlockBrick,-35,-5,40,10,16777215
+blocks.BlockBrick,-25,15,20,10,16777215
+blocks.BlockBrick,-25,55,20,10,16777215
+blocks.RoomSpawnerBlock,-35,5,10,10,16777215,rooms1,0,-10

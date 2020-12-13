@@ -11,6 +11,7 @@ import utils.MathUtils;
 import java.awt.*;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.Random;
 
 public class RoomSpawnerBlock extends Block implements IRoomRenderable, IBackgroundBlock, IEditorRenderable {
@@ -59,46 +60,95 @@ public class RoomSpawnerBlock extends Block implements IRoomRenderable, IBackgro
 		return roomPath;
 	}
 	
-	private static String shorten(String s,int shave) {
+	boolean isChecking=false;
+	
+	boolean alreadyFoundWrong=false;
+	
+	public static void reset() {
+//		recursiveRenders=0;
+	}
+	
+	private static String shorten(String s, int shave) {
 		return s.substring(0,s.length()-shave);
 	}
 	
 	@Override public void collide(long px,long py){}@Override public void draw(Graphics2D g){}@Override public boolean collidesPlayer(long px,long py){return false;}@Override public void drawBackground(Graphics2D g){this.drawInRoom(g);}
 	
+	private int attempts=0;
+	
 	@Override
 	public void drawInRoom(Graphics2D g2d) {
-		recursiveRenders++;
-		
-		//Get template
-		if (template==null)
-			if (!roomTemplate.equals(""))  template=(Game.loadOrGetRoom(roomTemplate));
-			else if (!roomPath.equals("")) template=(Game.loadOrGetRoom(getFile()));
-		
-		//Create Room
-		if (this.room==null) this.room=new Room(template,this.x-5+offX,(-this.y)-5+offY);
-		
-		//Render Room
-		if (recursiveRenders<=5) {
-			if (Game.game.checkRoomValid(room)) {
-				this.room.draw(g2d);
-				g2d.setColor(new Color(0,0,0, MathUtils.limit(0,(int)((recursiveRenders/5f)*255),255)));
-				if (!alwaysChooseFirst) {
-					g2d.fillRect(room.getMinX(),room.getMinY(),room.getMaxX()-room.getMinX(),room.getMaxY()-room.getMinY());
+		if (Game.startRender!=null) {
+			if (Game.startRender.getTime()<new Date().getTime()+100) {
+				recursiveRenders++;
+				
+				if (recursiveRenders<=0) {
+					recursiveRenders=200;
 				}
-			} else {
-				template=null;
-				room=null;
-				BlockBrick brick=new BlockBrick(x,y,width,height,0xFFFFFF,true);
-				brick.draw(g2d);
+				
+				if (recursiveRenders>30) {
+					recursiveRenders=200;
+				}
+				
+				//Get template
+				if (template==null)
+					if (!roomTemplate.equals(""))  template=(Game.loadOrGetRoom(roomTemplate));
+					else if (!roomPath.equals("")) template=(Game.loadOrGetRoom(getFile()));
+				
+				//Create Room
+				if (this.room==null) this.room=new Room(template,this.x-5+offX,(-this.y)-5+offY);
+				
+				//Render Room
+				if (recursiveRenders<=5) {
+					if (!alreadyFoundWrong&&Game.game.checkRoomValid(room)) {
+						Game.queuedRooms.add(this.room);
+						this.room.draw(g2d);
+						g2d.setColor(new Color(0,0,0, MathUtils.limit(0,(int)((recursiveRenders/5f)*255),255)));
+//						if (!alwaysChooseFirst) {
+//							g2d.fillRect(room.getMinX(),room.getMinY(),room.getMaxX()-room.getMinX(),room.getMaxY()-room.getMinY());
+//						}
+					} else {
+						for (int i=0;i<=2;i++) {
+							//Get template
+							if (template==null)
+								if (!roomTemplate.equals(""))  template=(Game.loadOrGetRoom(roomTemplate));
+								else if (!roomPath.equals("")) template=(Game.loadOrGetRoom(getFile()));
+							
+							//Create Room
+							if (this.room==null) this.room=new Room(template,this.x-5+offX,(-this.y)-5+offY);
+							
+							//Check Valid
+							if (Game.game.checkRoomValid(this.room)) {
+								this.template=null;
+								this.room=null;
+							}
+						}
+						if (this.room==null) {
+	//						template=null;
+	//						room=null;
+							alreadyFoundWrong=true;
+							BlockBrick brick=new BlockBrick(x,y,width,height,0xFFFFFF,true);
+							brick.draw(g2d);
+						} else {
+							recursiveRenders--;
+							try {
+								this.drawInRoom(g2d);
+							} catch (Throwable err) {}
+							recursiveRenders++;
+						}
+					}
+				}
+				recursiveRenders--;
 			}
 		}
-		recursiveRenders--;
 	}
 	
 	@Override
 	public void drawInEditor(Graphics2D g) {
-		recursiveRenders=4;
-		alwaysChooseFirst=true;
+		recursiveRenders=3;
+		this.alwaysChooseFirst=true;
+		Game.startRender=new Date(0);
+//		this.drawInRoom(g);
 	}
 	
 	@Override
@@ -121,11 +171,16 @@ public class RoomSpawnerBlock extends Block implements IRoomRenderable, IBackgro
 		if (this.room!=null) block.room=this.room;
 		block.offY=this.offY;
 		block.offX=this.offX;
+		block.alreadyFoundWrong=this.alreadyFoundWrong;
 		return block;
 	}
 	
 	@Override
 	public void update() {
+		recursiveRenders=0;
+		
+		attempts=0;
+		
 		//Get template
 		if (template==null)
 			if (!roomTemplate.equals(""))  template=(Game.loadOrGetRoom(roomTemplate));
@@ -135,17 +190,19 @@ public class RoomSpawnerBlock extends Block implements IRoomRenderable, IBackgro
 		if (room==null) room=new Room(template,this.x-5+offX,this.y-5+offY);
 		
 		//Check that the player is in the room
-		if (room.containsPoint(Game.playerX,Game.playerY)) {
-			//Add room to game
-			Game.blocksToRemove.add(this);
-			if (Game.game.checkRoomValid(room)) {
-				Game.game.rooms.add(room);
-			} else {
+		try {
+			if (alreadyFoundWrong||room==null||template==null) {
+				Game.blocksToRemove.add(this);
 				Game.game.blocksToAdd.add(new BlockBrick(x,y,width,height,0xFFFFFF,true));
+			} else if (room.containsPoint(Game.playerX,Game.playerY)) {
+				//Add room to game
+//				if (Game.game.checkRoomValid(room)) {
+					Game.blocksToRemove.add(this);
+					Game.game.rooms.add(room);
+//				}
 			}
-		} else if (!Game.game.checkRoomValid(room)) {
-			Game.blocksToRemove.add(this);
-			Game.game.blocksToAdd.add(new BlockBrick(x,y,width,height,0xFFFFFF,true));
+		} catch (Throwable err) {
+			err.printStackTrace();
 		}
 	}
 	

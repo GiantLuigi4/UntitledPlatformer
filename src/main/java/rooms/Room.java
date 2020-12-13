@@ -2,6 +2,7 @@ package rooms;
 
 import blocks.Block;
 import blocks.IRoomRenderable;
+import blocks.ISpecialValidator;
 
 import java.awt.*;
 import java.util.ArrayList;
@@ -50,12 +51,13 @@ public class Room {
 		g.fillRect(this.getMinX(),this.getMinY(),this.getMaxX()-this.getMinX(),height);
 		if (!hasGenerated) {
 			if (blocks.isEmpty()) template.add(blocks,x,y);
-			blocks.forEach(b->{
+			for (int i=0;i<this.blocks.size();i++) {
+				Block b=this.blocks.get(i);
 				b.draw(g);
 				if (b instanceof IRoomRenderable) {
 					((IRoomRenderable) b).drawInRoom(g);
 				}
-			});
+			}
 		}
 	}
 	
@@ -70,22 +72,38 @@ public class Room {
 	}
 	
 	public boolean collidesWithRoom(Room that) {
-		int minX1=this.getMinX();
-		int minX2=that.getMinX();
-		int minY1=this.getMinY();
-		int minY2=that.getMinY();
-		int maxX1=this.getMaxX();
-		int maxX2=that.getMaxX();
-		int maxY1=this.getMaxY();
-		int maxY2=that.getMaxY();
-		//TODO: Remove java.awt.rectangle usage
-		if (
-				new Rectangle(minX1,minY1,maxX1-minX1,maxY1-minY1).intersects(
-					new Rectangle(minX2,minY2,maxX2-minX2,maxY2-minY2)
-				)
-		) {
-			return true;
+		return collidesWithRoom(that,null);
+	}
+	
+	public boolean collidesWithRoom(Room that,Object cause) {
+		if (that!=null&&this!=null) {
+			int minX1=this.getMinX();
+			int minX2=that.getMinX();
+			int minY1=this.getMinY();
+			int minY2=that.getMinY();
+			int maxX1=this.getMaxX();
+			int maxX2=that.getMaxX();
+			int maxY1=this.getMaxY();
+			int maxY2=that.getMaxY();
+			//TODO: Remove java.awt.rectangle usage
+			if (
+					new Rectangle(minX1,minY1,maxX1-minX1,maxY1-minY1).intersects(
+							new Rectangle(minX2,minY2,maxX2-minX2,maxY2-minY2)
+					)
+			) {
+				return true;
+			}
+			if (blocks.isEmpty()) template.add(this.blocks,x,y);
+			for (int i=0;i<this.blocks.size();i++) {
+				Block b=this.blocks.get(i);
+				if (b instanceof ISpecialValidator) {
+					if (!((ISpecialValidator) b).validate(that,cause)) {
+						return true;
+					}
+				}
+			}
+			return false;
 		}
-		return false;
+		return true;
 	}
 }

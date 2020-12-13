@@ -6,6 +6,7 @@ import blocks.BlockRegistry;
 import blocks.IEditorRenderable;
 import blocks.IRoomRenderable;
 import game.Game;
+import rooms.Room;
 import rooms.RoomTemplateEditor;
 
 
@@ -481,7 +482,7 @@ public class LevelEditor extends Game {
 	}
 	
 	int selectedBlockType=0;
-	int propertyBlockType=0;
+	int propertyBlockType=-1;
 	int hoveredBlockType=0;
 	
 	private Point getEditorPos(int mx,int my) {

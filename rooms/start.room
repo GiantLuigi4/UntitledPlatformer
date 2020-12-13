@@ -7,4 +7,4 @@ blocks.BlockBrick,-55,-25,110,10,-1
 blocks.BlockBrick,-55,-15,10,10,-1
 blocks.WaterBlock,-45,25,40,20,-1
 blocks.WaterBlock,5,25,40,20,-1
-blocks.RoomSpawnerBlock,-55,15,10,10,-1,rooms1,0,0
+blocks.RoomSpawnerBlock,-55,-5,10,10,-1,rooms1,0,20
